@@ -258,7 +258,7 @@ export default function HomePage() {
 
       <Section style={{ background: "#d6e1f7ff" }} id="catalogo">
         <ContainerProdutos>
-          <Title>Livros em destaque</Title>
+          <Title>Livros em destaques</Title>
           <CarouselWrapper ref={carouselRef}>
             {featuredProducts.map((p, idx) => (
               <CarouselCard key={p.id} isCenter={idx === centerIndex} onClick={() => selectProduto(p)}>
