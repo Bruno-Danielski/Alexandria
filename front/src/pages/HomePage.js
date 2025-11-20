@@ -192,18 +192,24 @@ export default function HomePage() {
     async function fetchProducts() {
       try {
         const q = encodeURIComponent("Batman");
-        const res = await fetch(`https://openlibrary.org/search.json?q=${q}&mode=everything`);
+        const url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${q}&maxResults=10`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          setFeaturedProducts([]);
+          return;
+        }
         const data = await res.json();
-        const docs = data.docs || [];
+        const items = data.items || [];
 
-        const destaque = docs.slice(0, 10).map((doc, idx) => {
-          const id = doc.key || doc.cover_edition_key || `${doc.title}-${idx}`;
-          const title = doc.title + (doc.subtitle ? ": " + doc.subtitle : "") || "Sem título";
-          const cover = doc.cover_i
-            ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
+        const destaque = items.map((item, idx) => {
+          const v = item.volumeInfo || {};
+          const id = item.id || `${v.title || 'no-title'}-${idx}`;
+          const title = v.title ? v.title + (v.subtitle ? ": " + v.subtitle : "") : "Sem título";
+          const cover = (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail))
+            ? (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail).replace(/^http:/, 'https:')
             : `https://via.placeholder.com/280x280?text=Sem+Capa`;
-          const badge = (doc.subject && doc.subject[0]) || (doc.author_name && doc.author_name[0]) || "Livro";
-          const description = (doc.subject && doc.subject.slice(0, 10).join(", ")) || `Publicado em ${doc.first_publish_year || "desconhecido"}`;
+          const badge = (v.categories && v.categories[0]) || (v.authors && v.authors[0]) || "Livro";
+          const description = v.description ? v.description.replace(/(<([^>]+)>)/gi, "").slice(0, 200) : (v.categories && v.categories.slice(0, 10).join(", ")) || `Publicado em ${v.publishedDate || "desconhecido"}`;
 
           return {
             id,
@@ -211,6 +217,7 @@ export default function HomePage() {
             image: cover,
             badge,
             description,
+            raw: item,
           };
         });
 

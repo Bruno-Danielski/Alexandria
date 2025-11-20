@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 
 const ModalOverlay = styled.div`
@@ -97,6 +98,7 @@ const CounterValue = styled.span`
 
 export default function ModalProduct({ product, onClose }) {
   const [count, setCount] = useState(1);
+  const navigate = useNavigate();
 
   if (!product) return null;
 
@@ -113,32 +115,15 @@ export default function ModalProduct({ product, onClose }) {
         <p><strong>Descrição:</strong> {product.description}</p>
         <ControlsRow>
           <CounterWrapper>
-            <CounterButton onClick={() => setCount(Math.max(1, count - 1))}>-</CounterButton>
-            <CounterValue>{count}</CounterValue>
-            <CounterButton onClick={() => setCount(count + 1)}>+</CounterButton>
           </CounterWrapper>
           <Button
             onClick={() => {
-              const newItem = {
-                id: product.id,
-                name: product.name,
-                image: product.image,
-                qty: count,
-              };
-              const cart = JSON.parse(localStorage.getItem("cart")) || [];
-              const existingIndex = cart.findIndex(item => item.id === newItem.id);
-              if (existingIndex >= 0) {
-                cart[existingIndex].qty += newItem.qty;
-              } else {
-                cart.push(newItem);
-              }
-              localStorage.setItem("cart", JSON.stringify(cart));
-
-              window.dispatchEvent(new Event("cartUpdated"));
+              const targetId = product?.raw?.id || product?.raw?.key || product.id;
               onClose();
+              navigate(`/livro?q=${encodeURIComponent(targetId)}`);
             }}
           >
-            Adicionar ao carrinho
+            Ver descrição completa
           </Button>
         </ControlsRow>
       </ModalContent>

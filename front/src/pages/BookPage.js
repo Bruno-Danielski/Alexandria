@@ -73,27 +73,52 @@ const RelatedTitle = styled.h3`
   margin-top: 2rem;
 `;
 
-export default function BookPage() {
-  // helper: safely stringify fields that may be string, object {value}, or array
-  const stringifyField = (v) => {
-    if (!v && v !== 0) return "";
-    if (typeof v === "string") return v;
-    if (typeof v === "number") return String(v);
-    if (Array.isArray(v)) return v.map(stringifyField).join(" ");
-    if (typeof v === "object") {
-      // common OpenLibrary shapes: { value: '...' } or { type: 'text', value: '...' }
-      if (v.value) return stringifyField(v.value);
-      // sometimes it's an object with 'type' and 'value' or other nested fields
-      const possible = Object.values(v).map(stringifyField).filter(Boolean);
-      return possible.join(" ");
-    }
-    return String(v);
-  };
+const MiniInfoRow = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin: 0.5rem 0 1rem 0;
+  flex-wrap: wrap;
+`;
 
+const MiniInfoCard = styled.div`
+  background: #e9edf1ff;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  width: 160px;
+  height: 72px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.25rem;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+
+  @media (max-width: 600px) {
+    width: 100%;
+    height: auto;
+    padding: 0.5rem;
+  }
+`;
+
+const MiniLabel = styled.div`
+  font-size: 0.75rem;
+  color: #475569;
+`;
+
+const MiniValue = styled.div`
+  font-weight: 700;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+export default function BookPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const key = params.get("q"); // expects openlibrary key like /works/OLxxxxxW or edition key
+  const key = params.get("q"); // expects Google Books id
 
   const [book, setBook] = useState(null);
   const [related, setRelated] = useState([]);
@@ -106,70 +131,63 @@ export default function BookPage() {
     async function fetchBook() {
       setLoading(true);
       try {
-        let data = null;
-
-        if (key.startsWith("/works/")) {
-          const url = `https://openlibrary.org${key}.json`;
-          const res = await fetch(url);
-          data = await res.json();
-          data._type = 'work';
-        } else {
-          try {
-            const urlWork = `https://openlibrary.org/works/${key}.json`;
-            const resWork = await fetch(urlWork);
-            if (resWork.ok) {
-              data = await resWork.json();
-              data._type = 'work';
-            }
-          } catch (err) {
-          }
-
-          if (!data) {
-            try {
-              const urlEdition = key.startsWith("/books/") ? `https://openlibrary.org${key}.json` : `https://openlibrary.org/books/${key}.json`;
-              const resEd = await fetch(urlEdition);
-              if (resEd.ok) {
-                data = await resEd.json();
-                data._type = 'edition';
-              }
-            } catch (err) {
-            }
-          }
-        }
-
-        if (!data) {
+        const id = key;
+        const url = `https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(id)}`;
+        const res = await fetch(url);
+        if (!res.ok) {
           setBook(null);
+          setRelated([]);
+          setLoading(false);
           return;
         }
 
-        const title = data.title || data?.works?.[0]?.title || "Sem título";
-        const descriptionRaw = data.description || data.first_sentence || '';
-        const description = stringifyField(descriptionRaw);
-        const subjects = data.subjects || data.subject || [];
-        const coverId = data.covers ? data.covers[0] : (data.cover_id || null);
-        const cover = coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : `https://via.placeholder.com/360x480?text=Sem+Capa`;
-        const authors_name = [];
+        const data = await res.json();
+        const vi = data.volumeInfo || {};
+        const title = vi.title ? vi.title + (vi.subtitle ? ": " + vi.subtitle : "") : 'Sem título';
+        const description = vi.description || '';
+        const subjects = vi.categories || [];
+        const cover = (vi.imageLinks && (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail))
+          ? (vi.imageLinks.thumbnail || vi.imageLinks.smallThumbnail).replace(/^http:/, 'https:')
+          : aboutImage;
+        const authors_name = vi.authors ? vi.authors.join(', ') : '';
+        const publishedYear = (vi.publishedDate && (vi.publishedDate.match(/\d{4}/) || [null])[0]) || null;
+        const pageCount = vi.pageCount || null;
+        const dimensions = vi.dimensions
+          ? [vi.dimensions.height, vi.dimensions.width, vi.dimensions.thickness].filter(Boolean).join(' x ')
+          : (vi.physicalDimensions || vi.printedDimensions || null);
+        const publisher = vi.publisher || null;
+        const publishDate = vi.publishedDate || null;
 
-        setBook({ title, description, subjects, cover, authors_name, raw: data });
+        setBook({ title, description, subjects, cover, authors_name, publishedYear, pageCount, dimensions, publisher, publishDate, raw: data });
 
-        let relatedDocs = [];
-        if (subjects && subjects.length > 0) {
-          const q = encodeURIComponent(subjects[0]);
-          const resRel = await fetch(`https://openlibrary.org/search.json?q=${q}&limit=12`);
+        // fetch related by category or author
+        let relatedItems = [];
+        if (subjects.length > 0) {
+          const q = `subject:${encodeURIComponent(subjects[0])}`;
+          const resRel = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=12`);
           const relJson = await resRel.json();
-          relatedDocs = relJson.docs || [];
+          relatedItems = relJson.items || [];
+        } else if (vi.authors && vi.authors.length > 0) {
+          const q = `inauthor:${encodeURIComponent(vi.authors[0])}`;
+          const resRel = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=12`);
+          const relJson = await resRel.json();
+          relatedItems = relJson.items || [];
         }
 
-        const relMapped = relatedDocs.map((doc, idx) => ({
-          id: doc.key || doc.cover_edition_key || `${doc.title}-${idx}`,
-          name: doc.title,
-          image: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : aboutImage,
-          badge: (doc.subject && doc.subject[0]) || (doc.author_name && doc.author_name[0]) || 'Livro',
-          description: (doc.subject && doc.subject.slice(0,5).join(', ')) || `Publicado em ${doc.first_publish_year || 'desconhecido'}`,
-          raw: doc,
-        }));
+        const relMapped = relatedItems.map((item, idx) => {
+          const v = item.volumeInfo || {};
+          const id = item.id || `${v.title || 'no-title'}-${idx}`;
+          return {
+            id,
+            name: v.title || 'Sem título',
+            image: (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail)) ? (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail).replace(/^http:/, 'https:') : aboutImage,
+            badge: (v.categories && v.categories[0]) || (v.authors && v.authors[0]) || 'Livro',
+            description: v.description || (v.categories && v.categories.slice(0,5).join(', ')) || `Publicado em ${v.publishedDate || 'desconhecido'}`,
+            raw: item,
+          };
+        });
 
-        setRelated(relMapped.filter(r => r.id !== key).slice(0, 10));
+        setRelated(relMapped.filter(r => r.id !== (data.id || id)).slice(0, 10));
       } catch (err) {
         console.error('Erro ao buscar livro:', err);
         setBook(null);
@@ -202,6 +220,35 @@ export default function BookPage() {
                   <Description>Autor: {book.authors_name}</Description>
                   <Description>Categoria: {book.subjects && book.subjects[0] ? book.subjects[0] : 'Livro'}</Description>
                   <Description>Descrição: {book.description}</Description>
+
+                  <MiniInfoRow>
+                    <MiniInfoCard>
+                      <MiniLabel>Ano</MiniLabel>
+                      <span>📅</span>
+                      <MiniValue>{book.publishedYear || '—'}</MiniValue>
+                    </MiniInfoCard>
+                    <MiniInfoCard>
+                      <MiniLabel>Páginas</MiniLabel>
+                      <MiniValue>{book.pageCount || '—'}</MiniValue>
+                    </MiniInfoCard>
+                    <MiniInfoCard>
+                      <MiniLabel>Dimensões</MiniLabel>
+                      <MiniValue>{book.dimensions || '—'}</MiniValue>
+                    </MiniInfoCard>
+                    <MiniInfoCard>
+                      <MiniLabel>Editora</MiniLabel>
+                      <MiniValue>{book.publisher || '—'}</MiniValue>
+                    </MiniInfoCard>
+                    <MiniInfoCard>
+                      <MiniLabel>Data de publicação</MiniLabel>
+                      <MiniValue>{book.publishDate || '—'}</MiniValue>
+                    </MiniInfoCard>
+                    <MiniInfoCard>
+                      <MiniLabel>Dimensões</MiniLabel>
+                      <MiniValue>{book.dimensions || '—'}</MiniValue>
+                    </MiniInfoCard>
+                  </MiniInfoRow>
+
                 </div>
               </CardBody>
             </Card>
@@ -211,7 +258,8 @@ export default function BookPage() {
               {related.map((r) => (
                 <div key={r.id} style={{ flex: '0 0 240px' }} onClick={() => {
                   const badgeQuery = r.badge ? `&badge=${encodeURIComponent(r.badge)}` : '';
-                  navigate(`/livro?q=${encodeURIComponent(r.raw?.key || r.id)}${badgeQuery}`);
+                  const targetId = r.raw?.id || r.raw?.key || r.id;
+                  navigate(`/livro?q=${encodeURIComponent(targetId)}${badgeQuery}`);
                 }}>
                   <ProductCard product={r} />
                 </div>

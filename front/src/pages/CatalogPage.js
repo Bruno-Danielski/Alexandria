@@ -140,9 +140,9 @@ export default function CatalogPage() {
         setLoading(true);
         const isTitleSearch = searchTermParam && searchTermParam.trim() !== "";
         const defaultQ = "Programação";
-        const url = isTitleSearch
-          ? `https://openlibrary.org/search.json?title=${encodeURIComponent(searchTermParam.trim())}&limit=${itemsPerPage}&page=${page}`
-          : `https://openlibrary.org/search.json?q=${encodeURIComponent(defaultQ)}&limit=${itemsPerPage}&page=${page}`;
+        const qParam = isTitleSearch ? `intitle:${encodeURIComponent(searchTermParam.trim())}` : encodeURIComponent(defaultQ);
+        const startIndex = (page - 1) * itemsPerPage;
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${qParam}&startIndex=${startIndex}&maxResults=${itemsPerPage}`;
         const res = await fetch(url);
         if (!res.ok) {
           if (mounted) {
@@ -153,20 +153,18 @@ export default function CatalogPage() {
         }
 
         const json = await res.json();
-        const docs = json.docs || [];
-        const numFound = typeof json.numFound === "number" ? json.numFound : (docs.length || 0);
+        const items = json.items || [];
+        const numFound = typeof json.totalItems === "number" ? json.totalItems : (items.length || 0);
 
-        const mapped = docs.map((doc, idx) => {
-          const id = (doc.key || doc.cover_edition_key || `${doc.title}-${idx}`).toString().replace(/\//g, "_");
-          const title = doc.title + (doc.subtitle ? ": " + doc.subtitle : "") || "Sem título";
-          const cover = doc.cover_i
-            ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
+        const mapped = items.map((item, idx) => {
+          const doc = item.volumeInfo || {};
+          const id = (item.id || `${doc.title || 'no-title'}-${idx}`).toString().replace(/\//g, "_");
+          const title = (doc.title ? doc.title + (doc.subtitle ? ": " + doc.subtitle : "") : "Sem título");
+          const cover = (doc.imageLinks && (doc.imageLinks.thumbnail || doc.imageLinks.smallThumbnail))
+            ? (doc.imageLinks.thumbnail || doc.imageLinks.smallThumbnail).replace(/^http:/, 'https:')
             : aboutImage;
-          const badge = (doc.subject && doc.subject[0]) || (doc.author_name && doc.author_name[0]) || "Desconhecido";
-          const description =
-            (doc.first_sentence && (Array.isArray(doc.first_sentence) ? doc.first_sentence.join(" ") : doc.first_sentence)) ||
-            (doc.subject && doc.subject.slice(0, 5).join(", ")) ||
-            `Publicado em ${doc.first_publish_year || "desconhecido"}`;
+          const badge = (doc.categories && doc.categories[0]) || (doc.authors && doc.authors[0]) || "Desconhecido";
+          const description = doc.description || (doc.categories && doc.categories.slice(0, 5).join(", ")) || `Publicado em ${doc.publishedDate || "desconhecido"}`;
 
           return {
             id,
@@ -174,8 +172,8 @@ export default function CatalogPage() {
             image: cover,
             badge,
             description,
-            source: "openlibrary",
-            raw: doc,
+            source: "google",
+            raw: item,
           };
         });
 
@@ -184,7 +182,7 @@ export default function CatalogPage() {
           setTotalResults(numFound);
         }
       } catch (err) {
-        console.error("Erro ao buscar OpenLibrary:", err);
+        console.error("Erro ao buscar Google Books:", err);
         if (mounted) {
           setProducts([]);
           setTotalResults(0);
@@ -208,16 +206,16 @@ export default function CatalogPage() {
     const arr = [...filteredProducts];
     if (sortMode === 'rating_desc') {
       return arr.sort((a, b) => {
-        const ra = a.raw && (a.raw.ratings_average || a.raw.average_rating || a.raw.rating) ? Number(a.raw.ratings_average || a.raw.average_rating || a.raw.rating) : 0;
-        const rb = b.raw && (b.raw.ratings_average || b.raw.average_rating || b.raw.rating) ? Number(b.raw.ratings_average || b.raw.average_rating || b.raw.rating) : 0;
+        const ra = a.raw && a.raw.volumeInfo && a.raw.volumeInfo.averageRating ? Number(a.raw.volumeInfo.averageRating) : 0;
+        const rb = b.raw && b.raw.volumeInfo && b.raw.volumeInfo.averageRating ? Number(b.raw.volumeInfo.averageRating) : 0;
         return rb - ra;
       });
     }
     if (sortMode === 'year_desc') {
-      return arr.sort((a, b) => (b.raw?.first_publish_year || 0) - (a.raw?.first_publish_year || 0));
+      return arr.sort((a, b) => (b.raw?.publishedDate || 0) - (a.raw?.publishedDate || 0));
     }
     if (sortMode === 'year_asc') {
-      return arr.sort((a, b) => (a.raw?.first_publish_year || 0) - (b.raw?.first_publish_year || 0));
+      return arr.sort((a, b) => (a.raw?.publishedDate || 0) - (b.raw?.publishedDate || 0));
     }
     return arr; // relevance (as returned)
   })();
@@ -296,7 +294,7 @@ export default function CatalogPage() {
            <>
              <Container>
               {sortedProducts.map((product) => (
-                <ProductCard key={`${product.source}-${product.id}`} product={product} onClick={() => navigate(`/livro?q=${encodeURIComponent(product.raw?.key || product.id)}`)} />
+                <ProductCard key={`${product.source}-${product.id}`} product={product} onClick={() => navigate(`/livro?q=${encodeURIComponent(product.raw?.id || product.id)}`)} />
               ))}
              </Container>
 
