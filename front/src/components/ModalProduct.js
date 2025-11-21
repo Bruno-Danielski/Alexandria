@@ -80,22 +80,6 @@ const CounterWrapper = styled.div`
   gap: 0.5rem;
 `;
 
-const CounterButton = styled.button`
-  background: #eee;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  font-size: 1.2rem;
-  cursor: pointer;
-`;
-
-const CounterValue = styled.span`
-  font-size: 1.2rem;
-  min-width: 32px;
-  text-align: center;
-`;
-
 export default function ModalProduct({ product, onClose }) {
   const [count, setCount] = useState(1);
   const navigate = useNavigate();

@@ -17,10 +17,51 @@ const Container = styled.div`
   gap: 2rem;
 `;
 
-const LoadingText = styled.p`
-  text-align: center;
+const CatalogItemWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: transparent;
+
+  /* Clamp common title selectors inside ProductCard to 2 lines */
+  h3, h4, .product-title, .card-title, .name {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.15 !important;
+    max-height: 2.4em !important;
+    min-height: 2.4em !important; /* garante espaço mesmo para 1 linha */
+    margin: 0 !important;
+  }
+`;
+
+// Loading styles (same as BookPage)
+const LoadingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  width: 100%;
+`;
+
+const LoadingBox = styled.div`
+  background: rgba(15,23,42,0.06);
+  backdrop-filter: blur(4px);
+  padding: 3rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+  opacity: 0.96;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const LoadingText = styled.div`
   font-size: 1.25rem;
-  margin-top: 2rem;
+  color: #0f172a;
+  font-weight: 700;
 `;
 
 const PageWrapper = styled.div`
@@ -154,7 +195,17 @@ export default function CatalogPage() {
 
         const json = await res.json();
         const items = json.items || [];
-        const numFound = typeof json.totalItems === "number" ? json.totalItems : (items.length || 0);
+        // Google Books can report very large totalItems but API only allows access to ~1000 results.
+        const MAX_RESULTS_ALLOWED = 1000;
+        const reportedTotal = typeof json.totalItems === "number" ? json.totalItems : (items.length || 0);
+        const numFound = Math.min(reportedTotal, MAX_RESULTS_ALLOWED);
+
+        const totalPagesLocal = Math.max(1, Math.ceil(numFound / itemsPerPage));
+        // if requested page is beyond available pages, set to last page and abort (effect will rerun)
+        if (page > totalPagesLocal) {
+          if (mounted) setCurrentPage(totalPagesLocal);
+          return;
+        }
 
         const mapped = items.map((item, idx) => {
           const doc = item.volumeInfo || {};
@@ -289,13 +340,19 @@ export default function CatalogPage() {
           <option value="year_asc">Mais antigos</option>
         </SortSelect>
          {loading ? (
-           <LoadingText>Carregando produtos...</LoadingText>
+           <LoadingWrapper>
+             <LoadingBox>
+               <LoadingText>Carregando produtos...</LoadingText>
+             </LoadingBox>
+           </LoadingWrapper>
          ) : (
            <>
              <Container>
               {sortedProducts.map((product) => (
-                <ProductCard key={`${product.source}-${product.id}`} product={product} onClick={() => navigate(`/livro?q=${encodeURIComponent(product.raw?.id || product.id)}`)} />
-              ))}
+                <CatalogItemWrapper key={`${product.source}-${product.id}`} onClick={() => navigate(`/livro?q=${encodeURIComponent(product.raw?.id || product.id)}`)}>
+                  <ProductCard product={product} />
+                </CatalogItemWrapper>
+               ))}
              </Container>
 
             <PaginationWrapper>

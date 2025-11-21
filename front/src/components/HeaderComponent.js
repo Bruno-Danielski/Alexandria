@@ -109,22 +109,6 @@ const Button = styled.button`
   }
 `;
 
-const CartBadge = styled.span`
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: bold;
-  border-radius: 999px;
-  padding: 2px 8px;
-  min-width: 24px;
-  text-align: center;
-  pointer-events: none;
-  z-index: 2;
-`;
-
 const Hamburger = styled.button`
   background: none;
   border: none;
@@ -174,9 +158,8 @@ const MobileMenu = styled.div`
 export default function HeaderComponent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [cartCount, setCartCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-
+  const [user, setUser] = useState(null);
 
 
   const handleScrollOrNavigate = (id) => {
@@ -191,21 +174,28 @@ export default function HeaderComponent() {
   };
 
   useEffect(() => {
-    function updateCount() {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const total = cart.reduce((sum, item) => sum + item.qty, 0);
-      setCartCount(total);
+    function updateUserFromStorage() {
+      try {
+        const u = JSON.parse(localStorage.getItem('user')) || null;
+        setUser(u);
+      } catch (e) {
+        setUser(null);
+      }
     }
-    window.addEventListener("storage", updateCount);
-    window.addEventListener("cartUpdated", updateCount);
-    updateCount();
+    window.addEventListener('storage', updateUserFromStorage);
+    updateUserFromStorage();
     return () => {
-      window.removeEventListener("storage", updateCount);
-      window.removeEventListener("cartUpdated", updateCount);
+      window.removeEventListener('storage', updateUserFromStorage);
     };
   }, []);
 
-return (
+  const goProfile = () => {
+    const u = user || (() => { try { return JSON.parse(localStorage.getItem('user')); } catch(e) { return null; } })();
+    if (u) navigate('/usuario');
+    else navigate('/login');
+  };
+
+  return (
     <Header>
       <Container>
         <LogoWrapper>
@@ -223,10 +213,9 @@ return (
           <RouterLink to="/catalogo">Catálogo</RouterLink>
         </Nav>
 
-        <Button onClick={() => navigate("/Carrinho")}>
+        <Button onClick={goProfile}>
           <span>👤</span>
-          {cartCount > 0 && <CartBadge>{cartCount}</CartBadge>}
-          Perfil
+          {user ? (user.name ? user.name.split(' ')[0] : 'Perfil') : 'Entrar'}
         </Button>
       </Container>
       {menuOpen && (

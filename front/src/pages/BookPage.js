@@ -204,6 +204,33 @@ const RelatedItemWrapper = styled.div`
   }
 `;
 
+// Loading styles: centered, larger and slightly opaque
+const LoadingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  width: 100%;
+`;
+
+const LoadingBox = styled.div`
+  background: rgba(15,23,42,0.06);
+  backdrop-filter: blur(4px);
+  padding: 3rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+  opacity: 0.96;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const LoadingText = styled.div`
+  font-size: 1.25rem;
+  color: #0f172a;
+  font-weight: 700;
+`;
+
 export default function BookPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -330,10 +357,14 @@ export default function BookPage() {
       <HeaderComponent />
       <Page>
         {loading ? (
-          <p>Carregando...</p>
+          <LoadingWrapper>
+            <LoadingBox>
+              <LoadingText>Carregando...</LoadingText>
+            </LoadingBox>
+          </LoadingWrapper>
         ) : !book ? (
-          <p>Livro não encontrado.</p>
-        ) : (
+           <p>Livro não encontrado.</p>
+         ) : (
           <>
             <Card>
               <CardBody>

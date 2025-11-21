@@ -110,7 +110,7 @@ const CarouselWrapper = styled.div`
 `;
 
 const CarouselCard = styled.div`
-  flex: 0 0 280px;
+  flex: 0 0 320px;
   scroll-snap-align: center;
   transition: transform 0.3s, opacity 0.3s;
   opacity: ${({ isCenter }) => (isCenter ? 1 : 0.5)};
@@ -118,6 +118,39 @@ const CarouselCard = styled.div`
   z-index: ${({ isCenter }) => (isCenter ? 2 : 1)};
   margin-top: 1rem;
   margin-bottom: 1rem;
+`;
+
+const FeaturedItemWrapper = styled.div`
+  width: 300px;
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+  cursor: pointer;
+
+  img { width: 100% !important; height: 240px !important; object-fit: cover !important; display: block; }
+
+  /* force title to occupy two lines (reserve space when only one line) */
+  h3, h4, .product-title, .card-title, .name {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+    max-height: 2.8em !important;
+    min-height: 2.8em !important; /* reserve space even if only one line */
+    margin: 0 !important;
+    padding: 0.75rem 0.9rem !important;
+    font-size: 1.02rem !important;
+  }
+
+  .card-body, .card-content { padding: 0 !important; }
+
+  @media (max-width: 768px) { width: 200px; flex: 0 0 200px; img { height: 160px !important; } }
 `;
 
 const ContainerProdutos = styled.div`
@@ -269,7 +302,9 @@ export default function HomePage() {
           <CarouselWrapper ref={carouselRef}>
             {featuredProducts.map((p, idx) => (
               <CarouselCard key={p.id} isCenter={idx === centerIndex} onClick={() => selectProduto(p)}>
-                <ProductCard product={p} />
+                <FeaturedItemWrapper>
+                  <ProductCard product={p} />
+                </FeaturedItemWrapper>
               </CarouselCard>
             ))}
           </CarouselWrapper>
