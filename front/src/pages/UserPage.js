@@ -14,6 +14,8 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 1rem;
+  padding-top: 5.5rem;
+  padding-bottom: 5.5rem;
 `;
 
 const Sidebar = styled.div`
@@ -54,6 +56,28 @@ const Label = styled.div`
 
 const Value = styled.div`
   font-weight: 600;
+`;
+
+const Button = styled.button`
+  position: relative; // Adicionado
+  display: flex;
+  align-items: center;
+  background: #1371e6ff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+
+  span {
+    margin-right: 0.5rem;
+  }
+
+  &:hover {
+    background: #93c5fd;
+  }
 `;
 
 export default function UserPage() {
@@ -109,7 +133,7 @@ export default function UserPage() {
             ) : (
               <div>
                 <p>Deseja sair da sua conta?</p>
-                <button onClick={handleLogout}>Sair</button>
+                <Button onClick={handleLogout}>Sair</Button>
               </div>
             )}
           </Content>

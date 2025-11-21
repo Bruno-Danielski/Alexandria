@@ -50,18 +50,18 @@ const LogoWrapper = styled.div`
     height: 40px;
 
     @media (max-width: 460px) {
-      width: 35px;
-      height: 55px;
+      width: 100px;
+      height: 30px;
     }
 
     @media (max-width: 405px) {
-      width: 30px;
-      height: 50px;
+      width: 80px;
+      height: 25px;
     }
 
     @media (max-width: 370px) {
-      width: 25px;
-      height: 45px;
+      width: 60px;
+      height: 20px;
     }
   }
 `;
