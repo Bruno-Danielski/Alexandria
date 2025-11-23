@@ -73,18 +73,16 @@ const Msg = styled.div`
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState(false);
 
-  // placeholder: substitua por seu client id Google
   const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE';
   const GOOGLE_REDIRECT = `${window.location.origin}/auth/google/callback`;
 
-  // PKCE helpers
   function base64UrlEncode(buffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);
@@ -150,7 +148,6 @@ export default function LoginPage() {
       return;
     }
 
-    // login
     const found = users.find(u => u.email === email && u.password === password);
     if (!found) {
       setError(true);
@@ -165,7 +162,6 @@ export default function LoginPage() {
   }
 
   function handleGoogleLogin() {
-    // Authorization Code + PKCE flow
     (async () => {
       try {
         const verifier = generateVerifier();

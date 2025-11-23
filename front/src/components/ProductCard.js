@@ -39,7 +39,6 @@ const Badge = styled.span`
   border-radius: 0.375rem;
 `;
 
-// Rating components
 const RatingRow = styled.div`
   display: flex;
   align-items: center;

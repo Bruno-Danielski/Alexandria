@@ -88,7 +88,7 @@ const Nav = styled.nav`
 `;
 
 const Button = styled.button`
-  position: relative; // Adicionado
+  position: relative;
   display: flex;
   align-items: center;
   background: #1371e6ff;

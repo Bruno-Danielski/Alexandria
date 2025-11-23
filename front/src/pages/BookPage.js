@@ -204,7 +204,6 @@ const RelatedItemWrapper = styled.div`
   }
 `;
 
-// Loading styles: centered, larger and slightly opaque
 const LoadingWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -235,7 +234,7 @@ export default function BookPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const key = params.get("q"); // expects Google Books id
+  const key = params.get("q");
 
   const [book, setBook] = useState(null);
   const [related, setRelated] = useState([]);
@@ -279,7 +278,6 @@ export default function BookPage() {
 
         setBook({ title, description, subjects, cover, authors_name, publishedYear, pageCount, dimensions, publisher, publishDate, averageRating, ratingsCount, raw: data });
 
-        // fetch related primarily by title keywords, fallback to author
         let relatedItems = [];
         const titleForSearch = vi.title || '';
         const normalizedTitle = String(titleForSearch)
@@ -291,7 +289,6 @@ export default function BookPage() {
         const titleQuery = words.slice(0, 4).join(' ');
 
         if (titleQuery) {
-          // try intitle: first
           try {
             let resRel = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(titleQuery)}&maxResults=12`);
             let relJson = await resRel.json();
@@ -300,7 +297,6 @@ export default function BookPage() {
             relatedItems = [];
           }
 
-          // fallback to plain title keyword search
           if ((!relatedItems || relatedItems.length === 0) && titleQuery) {
             try {
               const fallbackRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titleQuery)}&maxResults=12`);
@@ -312,7 +308,6 @@ export default function BookPage() {
           }
         }
 
-        // if still nothing, try author
         if ((!relatedItems || relatedItems.length === 0) && vi.authors && vi.authors.length > 0) {
           try {
             const q = `inauthor:${vi.authors[0]}`;

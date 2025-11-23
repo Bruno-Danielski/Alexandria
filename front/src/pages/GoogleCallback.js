@@ -50,7 +50,6 @@ export default function GoogleCallback() {
         const tokenJson = await res.json();
         const accessToken = tokenJson.access_token;
 
-        // fetch userinfo
         const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -61,11 +60,9 @@ export default function GoogleCallback() {
         }
         const profile = await userRes.json();
 
-        // save user (simple localStorage approach)
         const user = { email: profile.email, name: profile.name, picture: profile.picture, provider: 'google' };
         localStorage.setItem('user', JSON.stringify(user));
 
-        // cleanup
         sessionStorage.removeItem('pkce_verifier');
         sessionStorage.removeItem('oauth_state');
 

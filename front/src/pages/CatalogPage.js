@@ -121,7 +121,6 @@ const PageInfo = styled.span`
   margin-left: 0.5rem;
 `;
 
-// sort select styles
 const SortSelect = styled.select`
   margin: 1rem 0;
   padding: 0.5rem;
@@ -194,13 +193,11 @@ export default function CatalogPage() {
 
         const json = await res.json();
         const items = json.items || [];
-        // Google Books can report very large totalItems but API only allows access to ~1000 results.
         const MAX_RESULTS_ALLOWED = 1000;
         const reportedTotal = typeof json.totalItems === "number" ? json.totalItems : (items.length || 0);
         const numFound = Math.min(reportedTotal, MAX_RESULTS_ALLOWED);
 
         const totalPagesLocal = Math.max(1, Math.ceil(numFound / itemsPerPage));
-        // if requested page is beyond available pages, set to last page and abort (effect will rerun)
         if (page > totalPagesLocal) {
           if (mounted) setCurrentPage(totalPagesLocal);
           return;
@@ -251,7 +248,6 @@ export default function CatalogPage() {
 
   const filteredProducts = products;
 
-  // apply sorting
   const sortedProducts = (() => {
     const arr = [...filteredProducts];
     if (sortMode === 'rating_desc') {
@@ -267,7 +263,7 @@ export default function CatalogPage() {
     if (sortMode === 'year_asc') {
       return arr.sort((a, b) => (a.raw?.publishedDate || 0) - (b.raw?.publishedDate || 0));
     }
-    return arr; // relevance (as returned)
+    return arr;
   })();
 
   const totalPages = Math.max(1, Math.ceil(totalResults / itemsPerPage));
@@ -286,7 +282,6 @@ export default function CatalogPage() {
     window.scrollTo({ top: 200, behavior: "smooth" });
   };
 
-  // helper: return array of page items (numbers or '...') to display
   const getPageItems = (total, current, maxButtons = 7) => {
     if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
     const half = Math.floor(maxButtons / 2);

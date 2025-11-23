@@ -59,7 +59,7 @@ const Value = styled.div`
 `;
 
 const Button = styled.button`
-  position: relative; // Adicionado
+  position: relative; 
   display: flex;
   align-items: center;
   background: #1371e6ff;
@@ -96,7 +96,6 @@ export default function UserPage() {
 
   function handleLogout() {
     localStorage.removeItem('user');
-    // optionally remove other app data
     navigate('/');
   }
 
