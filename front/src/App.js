@@ -4,6 +4,7 @@ import CatalogPage from "./pages/CatalogPage";
 import LoginPage from "./pages/LoginPage";
 import BookPage from "./pages/BookPage";
 import UserPage from "./pages/UserPage";
+import CollectionPage from "./pages/CollectionPage";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/livro" element={<BookPage />} />
         <Route path="/usuario" element={<UserPage />} />
+        <Route path="/colecao" element={<CollectionPage />} />
       </Routes>
     </Router>
   );

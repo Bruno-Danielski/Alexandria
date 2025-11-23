@@ -37,7 +37,6 @@ const CatalogItemWrapper = styled.div`
   }
 `;
 
-// Loading styles (same as BookPage)
 const LoadingWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -342,7 +341,7 @@ export default function CatalogPage() {
          {loading ? (
            <LoadingWrapper>
              <LoadingBox>
-               <LoadingText>Carregando produtos...</LoadingText>
+               <LoadingText>Carregando...</LoadingText>
              </LoadingBox>
            </LoadingWrapper>
          ) : (

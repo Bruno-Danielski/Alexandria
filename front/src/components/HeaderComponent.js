@@ -211,6 +211,7 @@ export default function HeaderComponent() {
           <a onClick={() => handleScrollOrNavigate("home")}>Início</a>
           <a onClick={() => handleScrollOrNavigate("sobre")}>Sobre</a>
           <RouterLink to="/catalogo">Catálogo</RouterLink>
+          {user && <RouterLink to="/colecao">Coleção</RouterLink>}
         </Nav>
 
         <Button onClick={goProfile}>
@@ -223,6 +224,7 @@ export default function HeaderComponent() {
           <a onClick={() => { setMenuOpen(false); handleScrollOrNavigate("home"); }}>Início</a>
           <a onClick={() => { setMenuOpen(false); handleScrollOrNavigate("sobre"); }}>Sobre</a>
           <RouterLink to="/catalogo" onClick={() => setMenuOpen(false)}>Catálogo</RouterLink>
+          {user && <RouterLink to="/colecao" onClick={() => setMenuOpen(false)}>Coleção</RouterLink>}
         </MobileMenu>
       )}
     </Header>
