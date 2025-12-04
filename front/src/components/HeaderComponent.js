@@ -1,7 +1,8 @@
 import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 
 const Header = styled.header`
@@ -159,8 +160,7 @@ export default function HeaderComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
-
+  const { user, loading } = useAuth();
 
   const handleScrollOrNavigate = (id) => {
     if (location.pathname === "/") {
@@ -173,27 +173,12 @@ export default function HeaderComponent() {
     }
   };
 
-  useEffect(() => {
-    function updateUserFromStorage() {
-      try {
-        const u = JSON.parse(localStorage.getItem('user')) || null;
-        setUser(u);
-      } catch (e) {
-        setUser(null);
-      }
-    }
-    window.addEventListener('storage', updateUserFromStorage);
-    updateUserFromStorage();
-    return () => {
-      window.removeEventListener('storage', updateUserFromStorage);
-    };
-  }, []);
-
   const goProfile = () => {
-    const u = user || (() => { try { return JSON.parse(localStorage.getItem('user')); } catch(e) { return null; } })();
-    if (u) navigate('/usuario');
+    if (user) navigate('/usuario');
     else navigate('/login');
   };
+
+  if (loading) return null; // Ou um loading spinner
 
   return (
     <Header>
@@ -216,7 +201,7 @@ export default function HeaderComponent() {
 
         <Button onClick={goProfile}>
           <span>👤</span>
-          {user ? (user.name ? user.name.split(' ')[0] : 'Perfil') : 'Entrar'}
+          {user ? (user.user_metadata?.name?.split(' ')[0] || user.email.split('@')[0]) : 'Entrar'}
         </Button>
       </Container>
       {menuOpen && (

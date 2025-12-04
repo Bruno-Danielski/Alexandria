@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import HeaderComponent from '../components/HeaderComponent';
 import FooterComponent from '../components/FooterComponent';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Page = styled.div`
   max-width: 1100px;
@@ -82,21 +83,22 @@ const Button = styled.button`
 
 export default function UserPage() {
   const [active, setActive] = useState('user');
-  const [user, setUser] = useState(null);
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    try {
-      const u = JSON.parse(localStorage.getItem('user')) || null;
-      setUser(u);
-    } catch (e) {
-      setUser(null);
-    }
-  }, []);
-
-  function handleLogout() {
-    localStorage.removeItem('user');
+  async function handleLogout() {
+    await signOut();
     navigate('/');
+  }
+
+  if (loading) {
+    return (
+      <>
+        <HeaderComponent />
+        <Page>Carregando...</Page>
+        <FooterComponent />
+      </>
+    );
   }
 
   return (
@@ -115,15 +117,15 @@ export default function UserPage() {
                 <div>
                   <Field>
                     <Label>Nome</Label>
-                    <Value>{user.name || '—'}</Value>
+                    <Value>{user.user_metadata?.name || user.email.split('@')[0]}</Value>
                   </Field>
                   <Field>
                     <Label>Email</Label>
                     <Value>{user.email || '—'}</Value>
                   </Field>
                   <Field>
-                    <Label>Senha</Label>
-                    <Value>{user.password ? '••••••••' : '—'}</Value>
+                    <Label>Administrador</Label>
+                    <Value>{user.user_metadata?.administrador === 'S' ? 'Sim' : 'Não'}</Value>
                   </Field>
                 </div>
               ) : (
